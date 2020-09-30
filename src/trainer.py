@@ -31,6 +31,7 @@ class Trainer:
         self.valid_rmse = []
         self.importance = []
 
+    
     def fit(self,
             X_train, y_train, X_valid, y_valid,
             early_stopping_rounds):
@@ -49,9 +50,9 @@ class Trainer:
             self.best_iteration = self.model.best_iteration_
             self.importance = self.model.booster_.feature_importance(
                 importance_type='gain')
-            self.train_rmse = np.array(
+            self.train_logloss = np.array(
                 self.model.evals_result_['training']['binary_logloss'])
-            self.valid_rmse = np.array(
+            self.valid_logloss = np.array(
                 self.model.evals_result_['valid_1']['binary_logloss'])
             self.importance = self.model.feature_importances_
 
@@ -66,33 +67,72 @@ class Trainer:
             )
             self.best_iteration = self.model.best_iteration
             self.importance = self.model.feature_importances_
-            self.train_rmse = np.array(
+            self.train_logloss = np.array(
                 self.model.evals_result_['validation_0']['logloss'])
-            self.valid_rmse = np.array(
+            self.valid_logloss = np.array(
                 self.model.evals_result_['validation_1']['logloss'])
+            
+        elif self.model_type == 'NNClassifier':
+            history = self.model.fit(
+                X_train,
+                y_train,
+                X_valid,
+                y_valid,
+                early_stopping_rounds
+            )
+            self.train_logloss = np.array(history.history['loss'])
+            self.valid_logloss = np.array(history.history['val_loss'])
+            
 
     def predict_proba(self, X):
-        if self.model_type == "LGBMClassifier" or "XGBClassifier":
+        if self.model_type == "LGBMClassifier":
+            print(print(f"model type is {self.model_type}"))
             return self.model.predict_proba(X, ntree_limit=self.best_iteration)
-
+        elif self.model_type == "XGBClassifier":
+            print(print(f"model type is {self.model_type}"))
+            return self.model.predict_proba(X, ntree_limit=self.best_iteration)
+        elif self.model_type == 'NNClassifier':
+            print(print(f"model type is {self.model_type}"))
+            return self.model.predict(X)
+        
+        
     def get_model(self):
-        return self.model
+        if self.model_type == "LGBMClassifier":
+            print(print(f"model type is {self.model_type}"))
+            return self.model
+        elif self.model_type == "XGBClassifier":
+            print(print(f"model type is {self.model_type}"))
+            return self.model
+        elif self.model_type == 'NNClassifier':
+            return self.model.get_model()
 
+    
     def get_best_iteration(self):
+        print(print(f"model type is {self.model_type}"))
         return self.best_iteration
 
+    
     def get_importance(self):
-        return self.importance
+        if self.model_type == "LGBMClassifier":
+            print(print(f"model type is {self.model_type}"))
+            return self.importance
+        elif self.model_type == "XGBClassifier":
+            print(print(f"model type is {self.model_type}"))
+            return self.importance
+        elif self.model_type == 'NNClassifier':
+            print(print(f"model type is {self.model_type}"))
+            return 'For NNClassifier, feature importance is not callable.'
 
+        
     def get_learning_curve(self):
         palette = sns.diverging_palette(220, 20, n=2)
-        width = np.arange(self.train_rmse.shape[0])
+        width = np.arange(self.train_logloss.shape[0])
         plt.figure(figsize=(10, 7.32))
         plt.title(
             'Learning_Curve ({})'.format(self.model_type), fontsize=15)
         plt.xlabel('Iterations', fontsize=15)
         plt.ylabel('LogLoss', fontsize=15)
-        plt.plot(width, self.train_rmse, label='train_logloss', color=palette[0])
-        plt.plot(width, self.valid_rmse, label='valid_logloss', color=palette[1])
+        plt.plot(width, self.train_logloss, label='train_logloss', color=palette[0])
+        plt.plot(width, self.valid_logloss, label='valid_logloss', color=palette[1])
         plt.legend(loc='upper right', fontsize=13)
         plt.show()

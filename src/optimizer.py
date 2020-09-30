@@ -1,5 +1,5 @@
 from trainer import Trainer
-from conf import Paramset
+from utils import Paramset
 from sklearn.metrics import log_loss
 from sklearn.model_selection import StratifiedKFold
 import numpy as np
