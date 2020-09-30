@@ -67,11 +67,25 @@ class Paramset:
                 }
             )
             return self.PARAMS
+        elif self.model_type == "NNClassifier":
+            self.PARAMS.update(
+                {
+                    'input_shape':1024,
+                    "input_dropout":0.2,
+                    "hidden_layers":1,
+                    'hidden_units':64,
+                    'hidden_dropout':0.2,
+                    'batch_norm':'before_act',
+                    'batch_size':64,
+                    'epochs':10000
+                }
+            )
+            return self.PARAMS
             
     def swiching_lr(self, swich):
         if swich == 'train':
             self.PARAMS.update({'learning_rate': 1e-3})
             return self.PARAMS
         elif swich == 'params_search':
-            self.PARAMS.update({'learing_rate': 0.05})
+            self.PARAMS.update({'learning_rate': 0.05})
             return self.PARAMS

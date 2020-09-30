@@ -1,5 +1,15 @@
+from keras.callbacks import EarlyStopping
+from keras.layers.advanced_activations import ReLU
+from keras.layers.core import Dense, Dropout
+from keras.layers.normalization import BatchNormalization
+from keras.models import Sequential
+from keras.optimizers import Adam
+from sklearn.preprocessing import StandardScaler
+from keras.utils import np_utils
+
+
 class NNClassifier:
-        '''
+    '''
     Usage:
     clf = NNClassifier(**params)
     history = clf.fit(
@@ -11,8 +21,8 @@ class NNClassifier:
     )
     '''
     
-    def __init__(self, input_shape, input_dropout, hidden_layers, hidden_units, hidden_dropout,
-                 batch_norm, learning_rate, batch_size, epochs):
+    def __init__(self, input_shape=1024, input_dropout=0.2, hidden_layers=1, hidden_units=64, hidden_dropout=0.2,
+                 batch_norm="none", learning_rate=0.05, batch_size=64, epochs=10000):
         self.input_shape = int(input_shape) # layer param
         self.input_dropout = input_dropout # layer param
         self.hidden_layers = int(hidden_layers) # layer param
@@ -35,8 +45,6 @@ class NNClassifier:
             self.model.add(Dense(self.hidden_units))
             if self.batch_norm == 'before_act':
                 self. model.add(BatchNormalization())
-            else:
-                raise NotImplementedError
             self.model.add(ReLU())
             self.model.add(Dropout(self.hidden_dropout))
         self.model.add(Dense(1, activation='sigmoid'))
