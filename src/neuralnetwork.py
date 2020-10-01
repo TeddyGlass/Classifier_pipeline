@@ -4,7 +4,7 @@ from keras.layers.core import Dense, Dropout
 from keras.layers.normalization import BatchNormalization
 from keras.models import Sequential
 from keras.optimizers import Adam
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import QuantileTransformer
 from keras.utils import np_utils
 
 
@@ -35,9 +35,9 @@ class NNClassifier:
         
     def fit(self, X_train, y_train, X_valid, y_valid, early_stopping_rounds):
         # Data standardization
-        self.scaler = StandardScaler()
-        X_train = self.scaler.fit_transform(X_train)
-        X_valid = self.scaler.transform(X_valid)
+        self.transformer = QuantileTransformer(n_quantiles=100, random_state=0, output_distribution='normal')
+        X_train = self.transformer.fit_transform(X_train)
+        X_valid = self.transformer.transform(X_valid)
         # layers
         self.model = Sequential()
         self.model.add(Dropout(self.input_dropout, input_shape=(self.input_shape,)))
@@ -70,7 +70,7 @@ class NNClassifier:
         return self.history
     
     def predict(self, x):
-        x = self.scaler.transform(x)
+        x = self.transformer.transform(x)
         y_pred = self.model.predict(x)
         y_pred = y_pred.flatten()
         return y_pred

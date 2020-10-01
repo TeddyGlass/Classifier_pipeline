@@ -24,7 +24,7 @@ class Objective:
         self.model_type = type(self.model).__name__
         self.x = x
         self.y = y
-        self.n_splits = 5
+        self.n_splits = 3
         self.random_state = 1214
         self.early_stopping_rounds = 20
         paramset = Paramset(self.model)
@@ -99,17 +99,17 @@ class Objective:
             self.PARAMS['input_shape'] = self.x.shape[1]
             SPACE = {
                 "input_dropout": trial.suggest_uniform(
-                    "input_dropout", 0.0, 1.0),
+                    "input_dropout", 0.2, 1.0),
                 "hidden_layers": trial.suggest_int(
-                    "hidden_layers", 1, 3),
+                    "hidden_layers", 1, 2),
                 'hidden_units': int(trial.suggest_discrete_uniform(
-                    'hidden_units', 64, 1024, 64)),
+                    'hidden_units', 8, 64, 8)),
                 'hidden_dropout': trial.suggest_uniform(
-                    'hidden_dropout', 0.0, 1.0),
+                    'hidden_dropout', 0.2, 1.0),
                 'batch_norm': trial.suggest_categorical(
                 'batch_norm', ['before_act', 'non']),
                 'batch_size': int(trial.suggest_discrete_uniform(
-                    'batch_size', 16, 96, 16))
+                    'batch_size', 16, 64, 16))
             }
             self.PARAMS.update(SPACE)
             # cross validation

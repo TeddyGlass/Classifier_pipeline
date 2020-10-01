@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
+from sklearn.model_selection import StratifiedKFold
 
 
 class Trainer:
@@ -86,22 +87,17 @@ class Trainer:
 
     def predict_proba(self, X):
         if self.model_type == "LGBMClassifier":
-            print(print(f"model type is {self.model_type}"))
-            return self.model.predict_proba(X, ntree_limit=self.best_iteration)
+            return self.model.predict_proba(X, num_iterations=self.best_iteration)[:,1]
         elif self.model_type == "XGBClassifier":
-            print(print(f"model type is {self.model_type}"))
-            return self.model.predict_proba(X, ntree_limit=self.best_iteration)
+            return self.model.predict_proba(X, ntree_limit=self.best_iteration)[:,1]
         elif self.model_type == 'NNClassifier':
-            print(print(f"model type is {self.model_type}"))
             return self.model.predict(X)
         
         
     def get_model(self):
         if self.model_type == "LGBMClassifier":
-            print(print(f"model type is {self.model_type}"))
             return self.model
         elif self.model_type == "XGBClassifier":
-            print(print(f"model type is {self.model_type}"))
             return self.model
         elif self.model_type == 'NNClassifier':
             return self.model.get_model()
@@ -114,13 +110,10 @@ class Trainer:
     
     def get_importance(self):
         if self.model_type == "LGBMClassifier":
-            print(print(f"model type is {self.model_type}"))
             return self.importance
         elif self.model_type == "XGBClassifier":
-            print(print(f"model type is {self.model_type}"))
             return self.importance
         elif self.model_type == 'NNClassifier':
-            print(print(f"model type is {self.model_type}"))
             return 'For NNClassifier, feature importance is not callable.'
 
         
@@ -136,3 +129,36 @@ class Trainer:
         plt.plot(width, self.valid_logloss, label='valid_logloss', color=palette[1])
         plt.legend(loc='upper right', fontsize=13)
         plt.show()
+        
+        
+def cv_and_emsemble_predict(model, X_train, y_train, X_test, n_splits, early_stopping_rounds, random_state):
+    '''
+    Return:
+    predicted value of validation set,
+    and list of prediction values for the test set predicted by each K-kinds of model in the CV 
+    Notaion:
+    predicted value of the validation set can be use for building stacking model.
+    '''
+    skf = StratifiedKFold(n_splits=n_splits, random_state=random_state, shuffle=True)
+    VA_IDXES = []
+    VA_PREDS = []
+    TE_PREDS = []
+    for tr_idx, va_idx in skf.split(X_train, y_train):
+        clf = Trainer(model)
+        clf.fit(
+            X_train[tr_idx],
+            y_train[tr_idx],
+            X_train[va_idx],
+            y_train[va_idx],
+            early_stopping_rounds
+        )
+        va_pred = clf.predict_proba(X_train[va_idx])
+        te_pred = clf.predict_proba(X_test)
+        VA_IDXES.append(va_idx)
+        VA_PREDS.append(va_pred)
+        TE_PREDS.append(te_pred)
+    va_idxes = np.concatenate(VA_IDXES)
+    order = np.argsort(va_idxes)
+    va_preds = np.concatenate(VA_PREDS)
+    va_preds = va_preds[order]
+    return va_preds, TE_PREDS
