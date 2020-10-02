@@ -1,4 +1,4 @@
-from processing import under_sampling
+from processing import under_sampling, nan_processing
 from trainer import Trainer, cv_and_emsemble_predict
 from optimizer import Objective, optuna_search
 from utils import Paramset, load, save
@@ -19,7 +19,7 @@ def Optimizer(n_trials, n_jobs, random_state):
         if flag_inputtype == 'list':
             print(f' Data type of X is list type.')
             print(f' Running optimization for all data sets. Please waite....')
-            for x, y in tqdm(zip(X, Y)):
+            for x, y in zip(X, Y):
                 obj_lgb = Objective(LGBMClassifier(), x, y)
                 obj_xgb = Objective(XGBClassifier(), x, y)
                 obj_nn = Objective(NNClassifier(), x, y)
@@ -191,28 +191,48 @@ if __name__ == '__main__':
         'X_path': '../data/X.csv',
         'y_path': '../data/y.csv',
         'X_test_path': '../data/X_test.csv',
+        'nan_processing':
+        False,
+#         'drop',
+#         'fillzero',
+#         'fillmean',
+#         'fillmedian',
         'under_sampling': True,
         'optimize': True,
-        'LGB': True,
+        'LGB': False,
         'XGB': False,
-        'NN': False,
+        'NN': True,
     }
     ### Optimizier params
-    n_trials = 50
+    n_trials = 3
     n_jobs = -1
     random_state_opt = 0
     ### Ensembler params
     n_splits = 5
-    early_stopping_rounds = 1000
+    early_stopping_rounds = 10
     random_state_ens = 1522
-    # data load
+    # data load and Processing
     X = np.array(pd.read_csv(PIPELINE_PARAMS['X_path']).iloc[:,1:])
     Y = np.array(pd.read_csv(PIPELINE_PARAMS['y_path']).iloc[:,1:]).flatten()
     X_test = np.array(pd.read_csv(PIPELINE_PARAMS['X_test_path']).iloc[:,1:])
+    if PIPELINE_PARAMS['nan_processing'] != False:
+        X_ = np.concatenate([X, X_test], axis=0)
+        X = nan_processing(X_, PIPELINE_PARAMS['nan_processing'])[:len(X),:]
+        X_test = nan_processing(X_, PIPELINE_PARAMS['nan_processing'])[len(X_test):,:]
     print(X.shape)
     Y[:200] = 0
     if PIPELINE_PARAMS['under_sampling']==True:
         X, Y = under_sampling(X, Y)
     #  pipeline
+    print('Set default paramseters')
+    paramset_lgb = Paramset(LGBMClassifier())
+    paramset_lgb.swiching_lr('train')
+    lgb_params = paramset_lgb.generate_params()
+    paramset_xgb = Paramset(XGBClassifier())
+    paramset_xgb.swiching_lr('train')
+    xgb_params = paramset_xgb.generate_params()
+    paramset_nn = Paramset(NNClassifier())
+    paramset_nn.swiching_lr('train')
+    nn_params = paramset_nn.generate_params()
     LGB_PARAMS, XGB_PARAMS, NN_PARAMS = Optimizer(n_trials, n_jobs, random_state_opt)
-    LGB_PREFDS, XGB_PREFDS, NN_PREFDS = Ensembler(n_splits, early_stopping_rounds, random_state_esn)
+    LGB_PREFDS, XGB_PREFDS, NN_PREFDS = Ensembler(n_splits, early_stopping_rounds, random_state_ens)

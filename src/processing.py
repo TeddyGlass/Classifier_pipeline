@@ -30,21 +30,14 @@ def under_sampling(X, y):
         return under_sampling_X, under_sampling_y
 
 
-# def filL_nan(X, y, option):
-#     '''
-#     Input: array or list of array
-#     Return: array or list of array
-#     '''
-#     flag = type(a).__name__
-#     if flag == 'ndarray':
-#         if option == 'zero':
-#         elif option == 'mean':
-#         elif option == 'median':
-#     elif flag == 'list':
-#         if option == 'zero':
-#         elif option == 'mean':
-#         elif option == 'median':
-            
-            
-            
-            
+def nan_processing(x, flag):
+    if flag == 'drop':
+        return x[:, ~np.isnan(x).any(axis=0)]
+    elif flag == 'fillzero':
+        return np.nan_to_num(x)
+    elif flag == 'fillmean':
+        df = pd.DataFrame(x)
+        return np.array(df.fillna(df.mean()))
+    elif flag == 'fillmedian':
+        df = pd.DataFrame(x)
+        return np.array(df.fillna(df.median()))
