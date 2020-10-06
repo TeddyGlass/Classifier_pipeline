@@ -26,7 +26,7 @@ class Objective:
         self.y = y
         self.n_splits = 3
         self.random_state = 1214
-        self.early_stopping_rounds = 20
+        self.early_stopping_rounds = 200
         paramset = Paramset(self.model)
         paramset.swiching_lr('params_search')
         self.PARAMS = paramset.generate_params()
@@ -35,7 +35,7 @@ class Objective:
         if self.model_type == 'LGBMClassifier':
             SPACE = {
                 'num_leaves': trial.suggest_int(
-                'num_leaves', 32, 2*32),
+                'num_leaves', 8, 31),
                 'subsample': trial.suggest_uniform('subsample', 0.60, 0.80),
                 'colsample_bytree': trial.suggest_uniform(
                     'colsample_bytree', 0.60, 0.80),
@@ -44,7 +44,7 @@ class Objective:
                 'min_child_weight': trial.suggest_loguniform(
                     'min_child_weight', 1, 32),
                 'min_child_samples': int(trial.suggest_discrete_uniform(
-                    'min_child_samples', 128, 512, 16)),
+                    'min_child_samples', 5, 50, 5)),
                 'min_split_gain': trial.suggest_loguniform(
                     'min_split_gain', 1e-5, 1e-1)
             }

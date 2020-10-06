@@ -10,34 +10,15 @@ import pandas as pd
 
 
 def Optimizer(n_trials, n_jobs, random_state):
-    LGB_PARAMS = []
-    XGB_PARAMS = []
-    NN_PARAMS = []
-    if PIPELINE_PARAMS['optimize']==True:
-        print('Run Optimizer.')
-        flag_inputtype = type(X).__name__
-        if flag_inputtype == 'list':
-            print(f' Data type of X is list type.')
-            print(f' Running optimization for all data sets. Please waite....')
-            for x, y in zip(X, Y):
-                obj_lgb = Objective(LGBMClassifier(), x, y)
-                obj_xgb = Objective(XGBClassifier(), x, y)
-                obj_nn = Objective(NNClassifier(), x, y)
-                if PIPELINE_PARAMS['LGB']==True:
-                    lgb_params = optuna_search(obj_lgb, n_trials, n_jobs, random_state)
-                    LGB_PARAMS.append(lgb_params)
-                if PIPELINE_PARAMS['XGB']==True:
-                    xgb_params = optuna_search(obj_xgb, n_trials, n_jobs, random_state)
-                    XGB_PARAMS.append(xgb_params)
-                if PIPELINE_PARAMS['NN']==True:
-                    nn_params = optuna_search(obj_nn, n_trials, n_jobs, random_state)
-                    NN_PARAMS.append(nn_params)  
-        elif flag_inputtype == 'ndarray':
-            print(f' Data type of X is ndarray.')
-            print(f' Running optimization for a data sets.')
-            obj_lgb = Objective(LGBMClassifier(), X, Y)
-            obj_xgb = Objective(XGBClassifier(), X, Y)
-            obj_nn = Objective(NNClassifier(), X, Y)
+    LGB_PARAMS, XGB_PARAMS, NN_PARAMS = [], [], []
+    flag_inputtype = type(X).__name__
+    if flag_inputtype == 'list':
+        print(f' Data type of X is list type.')
+        print(f' Running optimization for all data sets. Just a moment....')
+        for x, y in zip(X, Y):
+            obj_lgb = Objective(LGBMClassifier(), x, y)
+            obj_xgb = Objective(XGBClassifier(), x, y)
+            obj_nn = Objective(NNClassifier(), x, y)
             if PIPELINE_PARAMS['LGB']==True:
                 lgb_params = optuna_search(obj_lgb, n_trials, n_jobs, random_state)
                 LGB_PARAMS.append(lgb_params)
@@ -46,40 +27,45 @@ def Optimizer(n_trials, n_jobs, random_state):
                 XGB_PARAMS.append(xgb_params)
             if PIPELINE_PARAMS['NN']==True:
                 nn_params = optuna_search(obj_nn, n_trials, n_jobs, random_state)
-                NN_PARAMS.append(nn_params)
+                NN_PARAMS.append(nn_params)  
+    elif flag_inputtype == 'ndarray':
+        print(f' Data type of X is ndarray.')
+        print(f' Running optimization for a data sets.')
+        obj_lgb = Objective(LGBMClassifier(), X, Y)
+        obj_xgb = Objective(XGBClassifier(), X, Y)
+        obj_nn = Objective(NNClassifier(), X, Y)
+        if PIPELINE_PARAMS['LGB']==True:
+            lgb_params = optuna_search(obj_lgb, n_trials, n_jobs, random_state)
+            LGB_PARAMS.append(lgb_params)
+        if PIPELINE_PARAMS['XGB']==True:
+            xgb_params = optuna_search(obj_xgb, n_trials, n_jobs, random_state)
+            XGB_PARAMS.append(xgb_params)
+        if PIPELINE_PARAMS['NN']==True:
+            nn_params = optuna_search(obj_nn, n_trials, n_jobs, random_state)
+            NN_PARAMS.append(nn_params)
     return LGB_PARAMS, XGB_PARAMS, NN_PARAMS
 
 
 def Ensembler(n_splits, early_stopping_rounds, random_state):
-    LGB_PREFDS = []
-    XGB_PREFDS = []
-    NN_PREFDS = []
+    LGB_PREDS, XGB_PREDS, NN_PREDS = [], [], []
     flag_inputtype = type(X).__name__
     if flag_inputtype == 'list':
         for i, x, y in zip(np.arange(len(X)), X, Y):
-            print('-----------------------------------------------------------------------------------------------------')
             if len(LGB_PARAMS) != 0:
-                print('LGB params were optimized')
+                print('LGB has optimized parameters')
                 lgb_params.update(LGB_PARAMS[i])
                 lgb_params['min_child_samples'] = int(LGB_PARAMS[i]['min_child_samples'])
-            else:
-                print('LGB params were not optimized')
             if len(XGB_PARAMS) != 0:
-                print('XGB params were optimized')
+                print('XGB has optimized parameters')
                 xgb_params.update(XGB_PARAMS[i])
-            else:
-                print('XGB params were not optimized')
             if len(NN_PARAMS) != 0:
                 nn_params.update(NN_PARAMS[i])
                 nn_params['hidden_units'] = int(NN_PARAMS[i]['hidden_units'])
                 nn_params['batch_size'] = int(NN_PARAMS[i]['batch_size'])
-                print('NN params were optimized')
-            else:
-                print('NN params were not optimized')         
+                print('NN has optimized parameters')        
             if PIPELINE_PARAMS['LGB']==True:
-                print('-----------------------------------------------------------------------------------------------------')
                 print(f'LGB: {lgb_params}')
-                print('-----------------------------------------------------------------------------------------------------')
+                print('------------------------------------------------------------------------------------------------')
                 va_pred_lgb, te_preds_lgb = cv_and_emsemble_predict(
                     LGBMClassifier(**lgb_params),
                     x,
@@ -89,11 +75,10 @@ def Ensembler(n_splits, early_stopping_rounds, random_state):
                     early_stopping_rounds,
                     random_state
                 )
-                LGB_PREFDS.append([va_pred_lgb, te_preds_lgb])
+                LGB_PREDS.append([va_pred_lgb, te_preds_lgb])
             if PIPELINE_PARAMS['XGB']==True:
-                print('-----------------------------------------------------------------------------------------------------')
                 print(f'XGB: {xgb_params}')
-                print('-----------------------------------------------------------------------------------------------------')
+                print('------------------------------------------------------------------------------------------------')
                 va_pred_xgb, te_preds_xgb = cv_and_emsemble_predict(
                     XGBClassifier(**xgb_params),
                     x,
@@ -103,12 +88,11 @@ def Ensembler(n_splits, early_stopping_rounds, random_state):
                     early_stopping_rounds,
                     random_state
                 )
-                XGB_PREFDS.append([va_pred_xgb, te_preds_xgb])
+                XGB_PREDS.append([va_pred_xgb, te_preds_xgb])
             if PIPELINE_PARAMS['NN']==True:
                 nn_params['input_shape'] = x.shape[1]
-                print('-----------------------------------------------------------------------------------------------------')
                 print(f'NN: {nn_params}')
-                print('-----------------------------------------------------------------------------------------------------')
+                print('------------------------------------------------------------------------------------------------')
                 va_pred_nn, te_preds_nn = cv_and_emsemble_predict(
                     NNClassifier(**nn_params),
                     x,
@@ -118,32 +102,23 @@ def Ensembler(n_splits, early_stopping_rounds, random_state):
                     early_stopping_rounds,
                     random_state
                 )
-                NN_PREFDS.append([va_pred_nn, te_preds_nn])
+                NN_PREDS.append([va_pred_nn, te_preds_nn])
     elif flag_inputtype == 'ndarray':
-        # parameters 
         if len(LGB_PARAMS) != 0:
-            print('LGB params were optimized')
+            print('LGB has optimized parameters')
             lgb_params.update(LGB_PARAMS[0])
             lgb_params['min_child_samples'] = int(LGB_PARAMS[0]['min_child_samples'])
-        else:
-            print('LGB params were not optimized')
         if len(XGB_PARAMS) != 0:
-            print('XGB params were optimized')
+            print('XGB has optimized parameters')
             xgb_params.update(XGB_PARAMS[0])
-        else:
-            print('XGB params were not optimized')
         if len(NN_PARAMS) != 0:
             nn_params.update(NN_PARAMS[0])
             nn_params['hidden_units'] = int(NN_PARAMS[0]['hidden_units'])
             nn_params['batch_size'] = int(NN_PARAMS[0]['batch_size'])
             print('NN params were optimized')
-        else:
-            print('NN params were not optimized')
-        # training
         if PIPELINE_PARAMS['LGB']==True:
-            print('-----------------------------------------------------------------------------------------------------')
             print(f'LGB: {lgb_params}')
-            print('-----------------------------------------------------------------------------------------------------')
+            print('------------------------------------------------------------------------------------------------')
             va_pred_lgb, te_preds_lgb = cv_and_emsemble_predict(
                 LGBMClassifier(**lgb_params),
                 X,
@@ -153,11 +128,10 @@ def Ensembler(n_splits, early_stopping_rounds, random_state):
                 early_stopping_rounds,
                 random_state
             )
-            LGB_PREFDS.append([va_pred_lgb, te_preds_lgb])
+            LGB_PREDS.append([va_pred_lgb, te_preds_lgb])
         if PIPELINE_PARAMS['XGB']==True:
-            print('-----------------------------------------------------------------------------------------------------')
             print(f'XGB: {xgb_params}')
-            print('-----------------------------------------------------------------------------------------------------')
+            print('------------------------------------------------------------------------------------------------')
             va_pred_xgb, te_preds_xgb = cv_and_emsemble_predict(
                 XGBClassifier(**xgb_params),
                 X,
@@ -167,12 +141,11 @@ def Ensembler(n_splits, early_stopping_rounds, random_state):
                 early_stopping_rounds,
                 random_state
             )
-            XGB_PREFDS.append([va_pred_xgb, te_preds_xgb])
+            XGB_PREDS.append([va_pred_xgb, te_preds_xgb])
         if PIPELINE_PARAMS['NN']==True:
             nn_params['input_shape'] = X.shape[1]
-            print('-----------------------------------------------------------------------------------------------------')
             print(f'NN: {nn_params}')
-            print('-----------------------------------------------------------------------------------------------------')
+            print('------------------------------------------------------------------------------------------------')
             va_pred_nn, te_preds_nn = cv_and_emsemble_predict(
                 NNClassifier(**nn_params),
                 X,
@@ -182,8 +155,8 @@ def Ensembler(n_splits, early_stopping_rounds, random_state):
                 early_stopping_rounds,
                 random_state
             )
-            NN_PREFDS.append([va_pred_nn, te_preds_nn])
-    return LGB_PREFDS, XGB_PREFDS, NN_PREFDS
+            NN_PREDS.append([va_pred_nn, te_preds_nn])
+    return LGB_PREDS, XGB_PREDS, NN_PREDS
 
 
 if __name__ == '__main__':
@@ -199,19 +172,21 @@ if __name__ == '__main__':
 #         'fillmedian',
         'under_sampling': True,
         'optimize': True,
-        'LGB': False,
-        'XGB': False,
+        'use_stored_params': False,
+        'LGB': True,
+        'XGB': True,
         'NN': True,
     }
     ### Optimizier params
-    n_trials = 3
+    n_trials = 60
     n_jobs = -1
     random_state_opt = 0
     ### Ensembler params
     n_splits = 5
-    early_stopping_rounds = 10
+    early_stopping_rounds = 1000
     random_state_ens = 1522
-    # data load and Processing
+    
+    # load datasets
     X = np.array(pd.read_csv(PIPELINE_PARAMS['X_path']).iloc[:,1:])
     Y = np.array(pd.read_csv(PIPELINE_PARAMS['y_path']).iloc[:,1:]).flatten()
     X_test = np.array(pd.read_csv(PIPELINE_PARAMS['X_test_path']).iloc[:,1:])
@@ -219,12 +194,33 @@ if __name__ == '__main__':
         X_ = np.concatenate([X, X_test], axis=0)
         X = nan_processing(X_, PIPELINE_PARAMS['nan_processing'])[:len(X),:]
         X_test = nan_processing(X_, PIPELINE_PARAMS['nan_processing'])[len(X_test):,:]
-    print(X.shape)
-    Y[:200] = 0
+        
+    # undersampling
     if PIPELINE_PARAMS['under_sampling']==True:
         X, Y = under_sampling(X, Y)
-    #  pipeline
-    print('Set default paramseters')
+
+    # optimization
+    if PIPELINE_PARAMS['optimize']==True:
+        print('Run Optimizer. Just a moment.......')
+        LGB_PARAMS, XGB_PARAMS, NN_PARAMS = Optimizer(n_trials, n_jobs, random_state_opt)
+        ITEMS = [LGB_PARAMS, XGB_PARAMS, NN_PARAMS]
+        NAMES = ['LGB_PARAMS', 'XGB_PARAMS', 'NN_PARAMS']
+        for item, name in zip(ITEMS, NAMES):
+            save(f'../result/parameters/{name}.binaryfile', item)
+    elif PIPELINE_PARAMS['optimize']==False:
+        if PIPELINE_PARAMS['use_stored_params']==True:
+            print('Training parameters are referred to from /results/parameters/...')
+            if PIPELINE_PARAMS['LGB']==True:
+                LGB_PARAMS = load('../result/parameters/LGB_PARAMS.binaryfile')
+            elif PIPELINE_PARAMS['XGB']==True:
+                XGB_PARAMS = load('../result/parameters/XGB_PARAMS.binaryfile')
+            elif PIPELINE_PARAMS['NN']==True:
+                NN_PARAMS = load('../result/parameters/NN_PARAMS.binaryfile')
+        elif PIPELINE_PARAMS['use_stored_params']==False:
+            print('Training parameters are referred to from utils.py')
+            LGB_PARAMS, XGB_PARAMS, NN_PARAMS = {}, {}, {}
+    
+    #  train
     paramset_lgb = Paramset(LGBMClassifier())
     paramset_lgb.swiching_lr('train')
     lgb_params = paramset_lgb.generate_params()
@@ -234,5 +230,10 @@ if __name__ == '__main__':
     paramset_nn = Paramset(NNClassifier())
     paramset_nn.swiching_lr('train')
     nn_params = paramset_nn.generate_params()
-    LGB_PARAMS, XGB_PARAMS, NN_PARAMS = Optimizer(n_trials, n_jobs, random_state_opt)
-    LGB_PREFDS, XGB_PREFDS, NN_PREFDS = Ensembler(n_splits, early_stopping_rounds, random_state_ens)
+    LGB_PREDS, XGB_PREDS, NN_PREDS = Ensembler(n_splits, early_stopping_rounds, random_state_ens)
+    ITEMS = [LGB_PREDS, XGB_PREDS, NN_PREDS]
+    NAMES = ['LGB_PREDS', 'XGB_PREDS', 'NN_PREDS']
+    for item, name in zip(ITEMS, NAMES):
+        save(f'../result/predictions/{name}.binaryfile', item)
+        
+    
