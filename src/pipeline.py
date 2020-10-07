@@ -212,9 +212,9 @@ if __name__ == '__main__':
             print('Training parameters are referred to from /results/parameters/...')
             if PIPELINE_PARAMS['LGB']==True:
                 LGB_PARAMS = load('../result/parameters/LGB_PARAMS.binaryfile')
-            elif PIPELINE_PARAMS['XGB']==True:
+            if PIPELINE_PARAMS['XGB']==True:
                 XGB_PARAMS = load('../result/parameters/XGB_PARAMS.binaryfile')
-            elif PIPELINE_PARAMS['NN']==True:
+            if PIPELINE_PARAMS['NN']==True:
                 NN_PARAMS = load('../result/parameters/NN_PARAMS.binaryfile')
         elif PIPELINE_PARAMS['use_stored_params']==False:
             print('Training parameters are referred to from utils.py')
