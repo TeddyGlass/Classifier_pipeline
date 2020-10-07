@@ -170,20 +170,20 @@ if __name__ == '__main__':
 #         'fillzero',
 #         'fillmean',
 #         'fillmedian',
-        'under_sampling': True,
+        'under_sampling': False,
         'optimize': True,
         'use_stored_params': False,
-        'LGB': True,
-        'XGB': True,
+        'LGB': False,
+        'XGB': False,
         'NN': True,
     }
     ### Optimizier params
-    n_trials = 60
+    n_trials = 3
     n_jobs = -1
     random_state_opt = 0
     ### Ensembler params
     n_splits = 5
-    early_stopping_rounds = 1000
+    early_stopping_rounds = 10
     random_state_ens = 1522
     
     # load datasets

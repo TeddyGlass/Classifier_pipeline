@@ -26,7 +26,7 @@ class Objective:
         self.y = y
         self.n_splits = 3
         self.random_state = 1214
-        self.early_stopping_rounds = 200
+        self.early_stopping_rounds = 20
         paramset = Paramset(self.model)
         paramset.swiching_lr('params_search')
         self.PARAMS = paramset.generate_params()
@@ -126,7 +126,7 @@ class Objective:
                     self.early_stopping_rounds
                 )
                 y_pred = clf.predict_proba(self.x[va_idx])
-                logloss = clf.get_model().history.history["val_loss"][-(self.early_stopping_rounds+1)] # best rounds
+                logloss = log_loss(self.y[va_idx], y_pred) # best weghts
                 LOGLOSS.append(logloss)
             return np.mean(LOGLOSS)
             

@@ -71,7 +71,7 @@ class NNClassifier:
     
     def predict(self, x):
         x = self.transformer.transform(x)
-        y_pred = self.model.predict(x)
+        y_pred = self.model.predict(x).astype("float64")
         y_pred = y_pred.flatten()
         return y_pred
 
